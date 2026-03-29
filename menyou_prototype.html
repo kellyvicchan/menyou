@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menyou — Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#E8262A;--brand-d:#B81C1F;--brand-l:#FDEAEA;--brand-ll:#FFF5F5;
+  --gold:#F5A623;--gold-l:#FFF8EC;
+  --green:#2BA55C;--green-l:#EAF7F0;
+  --purple:#7B5EA7;--purple-l:#F3EFF9;
+  --blue:#2563EB;--blue-l:#EFF6FF;
+  --bg:#F9F7F4;--card:#FFFFFF;--text:#1A1A1A;--muted:#888;--border:#E8E8E8;
+}
+body{background:#e9e9e9;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.phone-outer{display:flex;flex-direction:column;align-items:center;gap:16px}
+.share-hint{background:#fff;border-radius:12px;padding:10px 18px;font-size:13px;color:#555;border:1px solid #ddd;text-align:center;max-width:375px}
+.phone{width:375px;background:var(--bg);border-radius:44px;border:3px solid #1A1A1A;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.25)}
+.status-bar{background:#fff;padding:12px 22px 7px;display:flex;justify-content:space-between;align-items:center}
+.status-time{font-size:15px;font-weight:700}
+.status-icons{display:flex;gap:6px;align-items:center}
+.viewport{height:700px;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);transform:translateX(100%);transition:transform 0.28s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.screen.active{transform:translateX(0);pointer-events:all}
+.screen.prev{transform:translateX(-30%)}
+.scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll-body::-webkit-scrollbar{display:none}
+
+/* BOTTOM NAV */
+.bottom-nav{background:#fff;border-top:1px solid var(--border);display:flex;padding:8px 0 16px;flex-shrink:0}
+.nav-item{flex:1;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s}
+.nav-item.active{color:var(--brand)}
+.nav-icon{width:22px;height:22px}
+
+/* COMMON */
+.section-hd{font-size:18px;font-weight:700;padding:16px 20px 0}
+.top-bar{background:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.back-btn{font-size:22px;cursor:pointer;color:var(--brand);line-height:1}
+.top-bar-title{font-size:16px;font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-green{background:var(--green-l);color:#1a7a42}
+.pill-gold{background:var(--gold-l);color:#8a5c00}
+.pill-red{background:var(--brand-l);color:var(--brand-d)}
+.pill-purple{background:var(--purple-l);color:#5a3e88}
+.pill-blue{background:var(--blue-l);color:#1a4fc4}
+.pill-gray{background:#f1f1f1;color:#555;border:1px solid #ddd}
+
+/* ONBOARDING */
+#screen-onboard .ob-page{display:none;flex-direction:column;height:100%;padding:30px 24px 24px}
+#screen-onboard .ob-page.active{display:flex}
+.ob-emoji{font-size:64px;text-align:center;margin:24px 0 16px}
+.ob-title{font-size:24px;font-weight:700;text-align:center;line-height:1.3}
+.ob-sub{font-size:14px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin:20px 0}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:var(--border);transition:all .2s}
+.ob-dot.active{width:22px;background:var(--brand)}
+.ob-btn{background:var(--brand);color:#fff;border:none;border-radius:14px;padding:15px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:auto}
+.ob-btn-ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand);border-radius:14px;padding:13px;width:100%;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+.diet-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.diet-option{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .15s;text-align:center}
+.diet-option.sel{border-color:var(--brand);background:var(--brand-ll)}
+.diet-option .d-icon{font-size:26px}
+.diet-option .d-name{font-size:13px;font-weight:600}
+.diet-option .d-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+.diet-option.sel .d-check{background:var(--brand);border-color:var(--brand);color:#fff}
+
+/* HOME */
+.home-header{background:#fff;padding:14px 20px 12px;display:flex;justify-content:space-between;align-items:center}
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#E8262A);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}
+.stats-row{display:flex;gap:8px;padding:12px 20px 0}
+.stat-card{flex:1;background:#fff;border-radius:14px;padding:11px 8px;text-align:center;border:1px solid var(--border)}
+.stat-num{font-size:21px;font-weight:700}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.search-wrap{padding:12px 20px 0;display:flex;gap:8px}
+.search-box{flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.search-placeholder{font-size:13px;color:var(--muted)}
+.filter-btn{width:42px;height:42px;background:var(--brand);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.profile-card{margin:12px 20px 0;background:var(--brand);border-radius:16px;padding:14px 16px}
+.profile-card-row{display:flex;justify-content:space-between;align-items:flex-start}
+.profile-card-title{color:#fff;font-weight:700;font-size:14px}
+.profile-card-sub{color:rgba(255,255,255,.72);font-size:11px;margin-top:2px}
+.edit-btn{background:rgba(255,255,255,.2);color:#fff;font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;border:none;white-space:nowrap}
+.diet-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.diet-tag{background:rgba(255,255,255,.22);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px}
+.tabs-row{display:flex;background:#fff;margin-top:12px;border-bottom:1px solid var(--border);padding:0 20px}
+.tab{font-size:14px;padding:10px 0 10px;margin-right:22px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+.rest-list{padding:10px 20px;display:flex;flex-direction:column;gap:10px}
+.rest-card{background:#fff;border-radius:16px;padding:13px;display:flex;gap:11px;border:1px solid var(--border);cursor:pointer;transition:transform .1s,border-color .1s}
+.rest-card:active{transform:scale(.98)}
+.rest-card.favorited{border-color:#ffb3b3}
+.rest-img{width:62px;height:62px;border-radius:12px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.rest-name{font-size:14px;font-weight:700}
+.rest-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.rest-meta{display:flex;align-items:center;gap:5px;margin-top:5px}
+.rest-heart{font-size:20px;cursor:pointer;align-self:flex-start;margin-left:auto;padding:2px;line-height:1}
+
+/* SEARCH / FILTER overlay */
+.filter-panel{background:#fff;border-radius:20px 20px 0 0;padding:20px 20px 30px;flex-shrink:0}
+.filter-panel h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.filter-chip{padding:7px 14px;border-radius:20px;font-size:13px;border:1.5px solid var(--border);cursor:pointer;background:#fff;transition:all .15s;font-weight:500}
+.filter-chip.active{background:var(--brand-l);border-color:var(--brand);color:var(--brand-d);font-weight:600}
+.filter-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.range-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.range-row input[type=range]{flex:1;accent-color:var(--brand)}
+.range-val{font-size:13px;font-weight:600;min-width:36px;text-align:right}
+.apply-btn{background:var(--brand);color:#fff;border:none;border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer}
+
+/* RESTAURANT DETAIL */
+.hero-block{height:150px;display:flex;align-items:center;justify-content:center;font-size:72px;background:#FFF3E0;flex-shrink:0}
+.detail-info-block{background:#fff;padding:14px 20px}
+.detail-name{font-size:20px;font-weight:700}
+.detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.detail-actions{display:flex;gap:8px;margin-top:12px}
+.action-btn{flex:1;background:var(--brand);color:#fff;border:none;border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.action-btn.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}
+.ai-banner{margin:12px 20px 0;background:var(--brand-l);border-radius:14px;padding:12px 14px;display:flex;gap:10px;border:1px solid rgba(232,38,42,.15)}
+.menu-section-hd{font-size:15px;font-weight:700;padding:16px 20px 8px}
+.menu-item{background:#fff;border-radius:13px;padding:13px;margin:0 20px 10px;display:flex;gap:11px;border:1px solid var(--border);cursor:pointer}
+.menu-item.safe{border-left:3px solid var(--green)}
+.menu-item.warn{border-left:3px solid var(--gold)}
+.menu-item.danger{border-left:3px solid var(--brand);opacity:.7}
+.menu-emoji{font-size:32px;flex-shrink:0;align-self:flex-start}
+.menu-name{font-size:14px;font-weight:700}
+.menu-desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+.menu-price{font-size:14px;font-weight:600;margin-top:5px}
+.add-btn{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-left:auto;align-self:flex-end;white-space:nowrap}
+
+/* REVIEWS */
+.review-card{background:#fff;border-radius:14px;padding:14px;margin:0 20px 10px;border:1px solid var(--border)}
+.review-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.review-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0}
+.review-name{font-size:13px;font-weight:700}
+.review-date{font-size:11px;color:var(--muted)}
+.stars{color:var(--gold);font-size:13px}
+.review-text{font-size:13px;line-height:1.6;color:#333}
+.write-review-btn{margin:4px 20px 16px;background:var(--brand-l);color:var(--brand-d);border:1.5px solid var(--brand);border-radius:12px;padding:12px;width:calc(100% - 40px);font-size:14px;font-weight:700;cursor:pointer}
+
+/* SCAN */
+.viewfinder{background:#111;border-radius:18px;margin:0 20px;height:220px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.vf-corner{position:absolute;width:36px;height:36px;border-color:var(--brand);border-style:solid}
+.vf-tl{top:14px;left:14px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.vf-tr{top:14px;right:14px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.vf-bl{bottom:14px;left:14px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.vf-br{bottom:14px;right:14px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;width:76%;height:2px;background:var(--brand);animation:scanA 2s ease-in-out infinite}
+@keyframes scanA{0%,100%{top:18%}50%{top:74%}}
+.scan-hint{font-size:13px;color:rgba(255,255,255,.55);position:absolute;bottom:14px}
+.scan-result{background:#fff;border-radius:16px;margin:12px 20px 0;padding:16px;border:1px solid var(--border);display:none}
+.scan-result.show{display:block}
+
+/* NOTES */
+.note-card{background:#fff;border-radius:16px;padding:14px;margin:0 20px 12px;border:1px solid var(--border)}
+.note-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:8px}
+.note-text{font-size:13px;line-height:1.7;color:#333}
+.note-actions{display:flex;gap:8px;margin-top:11px}
+.note-btn{flex:1;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.note-btn-primary{background:var(--brand);color:#fff}
+.note-btn-ghost{background:#f5f5f5;color:#333;border:1px solid var(--border)}
+.add-note-btn{margin:4px 20px 20px;background:#fff;border:1.5px dashed var(--brand);border-radius:14px;padding:14px;width:calc(100%-40px);font-size:14px;color:var(--brand);cursor:pointer;font-weight:600;width:calc(100% - 40px)}
+
+/* PROFILE */
+.profile-header{background:var(--brand);padding:28px 20px 44px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.profile-avatar-lg{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.25);border:3px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;font-weight:700;margin-bottom:10px}
+.profile-name-lg{font-size:20px;font-weight:700;color:#fff}
+.profile-email{font-size:13px;color:rgba(255,255,255,.72);margin-top:3px}
+.profile-body{margin-top:-24px;padding:0 20px 24px}
+.pref-section{background:#fff;border-radius:16px;padding:15px;margin-bottom:12px;border:1px solid var(--border)}
+.pref-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.pref-tags{display:flex;flex-wrap:wrap;gap:7px}
+.pref-tag{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.pref-tag.on{background:var(--brand-l);color:var(--brand-d)}
+.pref-tag.off{background:#f5f5f5;color:var(--muted);border:1px solid var(--border)}
+.pref-tag.add-tag{background:#fff;color:var(--brand);border:1.5px dashed var(--brand)}
+.pref-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.pref-row:last-child{border-bottom:none}
+.pref-row-lbl{font-size:14px}
+.pref-row-val{font-size:13px;color:var(--muted)}
+.toggle{width:44px;height:24px;background:var(--green);border-radius:12px;position:relative;cursor:pointer;flex-shrink:0}
+.toggle::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:right .15s,left .15s}
+.toggle.off{background:var(--border)}
+.toggle.off::after{right:auto;left:3px}
+
+/* ORDER / CART */
+.cart-badge{position:absolute;top:-4px;right:-4px;background:var(--brand);color:#fff;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.cart-section{background:#fff;border-radius:16px;margin:0 20px 12px;padding:15px;border:1px solid var(--border)}
+.cart-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-emoji{font-size:22px;flex-shrink:0}
+.cart-name{font-size:13px;font-weight:600;flex:1}
+.cart-price{font-size:13px;font-weight:700;color:var(--brand)}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-btn{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.qty-num{font-size:13px;font-weight:700;min-width:16px;text-align:center}
+.order-total-row{display:flex;justify-content:space-between;padding:10px 0 0;font-size:15px;font-weight:700}
+.checkout-btn{background:var(--brand);color:#fff;border:none;border-radius:14px;padding:15px;width:calc(100% - 40px);margin:4px 20px 20px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* NOTIFY TOAST */
+.toast{position:absolute;top:12px;left:50%;transform:translateX(-50%) translateY(-80px);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;font-weight:600;white-space:nowrap;transition:transform .3s ease;z-index:99;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="phone-outer">
+<div class="share-hint">📱 Menyou Interactive Prototype &nbsp;·&nbsp; Tap through all screens &amp; features</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="1"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="1"/><rect x="9" y="0.5" width="3" height="10.5" rx="1"/><rect x="13.5" y="1.5" width="2.5" height="9.5" rx="1" opacity=".3"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 2C10.2 2 12.2 2.9 13.6 4.4L15 3C13.2 1.1 10.7 0 8 0S2.8 1.1 1 3l1.4 1.4C3.8 2.9 5.8 2 8 2z"/><path d="M8 5.5c1.3 0 2.5.5 3.4 1.4L12.8 5.5C11.5 4.2 9.9 3.5 8 3.5S4.5 4.2 3.2 5.5L4.6 6.9C5.5 6 6.7 5.5 8 5.5z"/><circle cx="8" cy="10" r="1.5"/></svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="currentColor"><rect x=".5" y=".5" width="19" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="15" height="7" rx="1.5"/><rect x="20.5" y="3.5" width="2.5" height="4" rx="1" opacity=".5"/></svg>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <div class="toast" id="toast"></div>
+
+    <!-- ONBOARDING -->
+    <div class="screen active" id="screen-onboard">
+      <div class="scroll-body">
+        <div class="ob-page active" id="ob0">
+          <div class="ob-emoji">🐑</div>
+          <div class="ob-title">Welcome to Menyou</div>
+          <div class="ob-sub">Personalized dining powered by AI. Eat with confidence, wherever you go.</div>
+          <div class="ob-dots"><div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+          <button class="ob-btn" onclick="obNext(1)">Get Started</button>
+          <button class="ob-btn-ghost" onclick="skipOnboard()">I already have an account</button>
+        </div>
+        <div class="ob-page" id="ob1">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px;margin-top:8px">Your dietary profile</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Select all that apply</div>
+          <div class="diet-grid" id="diet-grid">
+            <div class="diet-option sel" data-diet="Vegan" onclick="toggleDiet(this)"><div class="d-icon">🌿</div><div class="d-name">Vegan</div><div class="d-check">✓</div></div>
+            <div class="diet-option" data-diet="Vegetarian" onclick="toggleDiet(this)"><div class="d-icon">🥦</div><div class="d-name">Vegetarian</div><div class="d-check"></div></div>
+            <div class="diet-option sel" data-diet="Gluten-Free" onclick="toggleDiet(this)"><div class="d-icon">🌾</div><div class="d-name">Gluten-Free</div><div class="d-check">✓</div></div>
+            <div class="diet-option" data-diet="Dairy-Free" onclick="toggleDiet(this)"><div class="d-icon">🥛</div><div class="d-name">Dairy-Free</div><div class="d-check"></div></div>
+            <div class="diet-option" data-diet="Nut-Free" onclick="toggleDiet(this)"><div class="d-icon">🥜</div><div class="d-name">Nut-Free</div><div class="d-check"></div></div>
+            <div class="diet-option sel" data-diet="No Pork" onclick="toggleDiet(this)"><div class="d-icon">🚫</div><div class="d-name">No Pork</div><div class="d-check">✓</div></div>
+            <div class="diet-option" data-diet="Halal" onclick="toggleDiet(this)"><div class="d-icon">☪️</div><div class="d-name">Halal</div><div class="d-check"></div></div>
+            <div class="diet-option" data-diet="Kosher" onclick="toggleDiet(this)"><div class="d-icon">✡️</div><div class="d-name">Kosher</div><div class="d-check"></div></div>
+          </div>
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot active"></div><div class="ob-dot"></div></div>
+          <button class="ob-btn" onclick="obNext(2)">Continue</button>
+        </div>
+        <div class="ob-page" id="ob2">
+          <div class="ob-emoji">✅</div>
+          <div class="ob-title">You're all set!</div>
+          <div class="ob-sub">We'll show you only dishes and restaurants that match your profile. You can always update preferences later.</div>
+          <div style="background:var(--brand-ll);border-radius:14px;padding:14px;margin:16px 0;border:1px solid rgba(232,38,42,.15)">
+            <div style="font-size:12px;font-weight:700;color:var(--brand-d);margin-bottom:8px">YOUR PROFILE</div>
+            <div class="diet-tags" id="ob-tags-preview" style="gap:6px"></div>
+          </div>
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot active"></div></div>
+          <button class="ob-btn" onclick="skipOnboard()">Start Exploring 🍽️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div class="screen" id="screen-home">
+      <div class="scroll-body">
+        <div class="home-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar">J</div>
+            <div>
+              <div style="font-size:15px;font-weight:700">Good evening, Jennifer 👋</div>
+              <div style="font-size:12px;color:var(--muted)">San Diego, CA · 72°F</div>
+            </div>
+          </div>
+          <div style="position:relative;cursor:pointer" onclick="gotoScreen('screen-notifications')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <div class="cart-badge">3</div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-num" style="color:#2BA55C">47</div><div class="stat-lbl">Safe dishes</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:#2563EB">12</div><div class="stat-lbl">Restaurants</div></div>
+          <div class="stat-card" style="cursor:pointer" onclick="gotoScreen('screen-cart')"><div class="stat-num" style="color:var(--brand);position:relative">2<div class="cart-badge" style="top:-6px;right:-10px">2</div></div><div class="stat-lbl">Cart items</div></div>
+        </div>
+        <div class="search-wrap">
+          <div class="search-box" onclick="gotoScreen('screen-search')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span class="search-placeholder">Find your perfect meal...</span>
+          </div>
+          <div class="filter-btn" onclick="gotoScreen('screen-filter')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+          </div>
+        </div>
+        <div class="profile-card">
+          <div class="profile-card-row">
+            <div><div class="profile-card-title">Your Dining Profile</div><div class="profile-card-sub">Perfectly personalized for you</div></div>
+            <button class="edit-btn" onclick="gotoScreen('screen-profile')">✏️ Edit</button>
+          </div>
+          <div class="diet-tags" id="home-diet-tags">
+            <div class="diet-tag">🌿 Vegan</div><div class="diet-tag">🌾 Gluten-Free</div><div class="diet-tag">🚫 No Pork</div>
+          </div>
+        </div>
+        <div class="tabs-row">
+          <div class="tab active" onclick="homeTab(this,'foryou')">For You</div>
+          <div class="tab" onclick="homeTab(this,'popular')">Popular</div>
+          <div class="tab" onclick="homeTab(this,'nearby')">Nearby</div>
+        </div>
+        <div class="rest-list" id="rest-list"></div>
+        <div style="height:8px"></div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item active" onclick="gotoScreen('screen-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="nav-item" onclick="gotoScreen('screen-scan')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7" fill="currentColor" opacity=".35"/></svg>Scan</div>
+        <div class="nav-item" onclick="gotoScreen('screen-notes')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes</div>
+        <div class="nav-item" onclick="gotoScreen('screen-profile')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="screen" id="screen-search">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title">Search</span></div>
+      <div class="scroll-body" style="padding:12px 20px">
+        <input type="text" id="search-input" placeholder="Pasta, sushi, burgers..." style="width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-size:14px;outline:none;margin-bottom:14px" oninput="doSearch(this.value)">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:8px">RECENT SEARCHES</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px">
+          <span class="pill pill-gray" style="cursor:pointer" onclick="setSearch('vegan ramen')">🔍 vegan ramen</span>
+          <span class="pill pill-gray" style="cursor:pointer" onclick="setSearch('gluten free pizza')">🔍 gluten free pizza</span>
+          <span class="pill pill-gray" style="cursor:pointer" onclick="setSearch('pacific bowl')">🔍 pacific bowl</span>
+        </div>
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="screen" id="screen-filter">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title">Filter & Sort</span></div>
+      <div class="scroll-body" style="padding:16px 20px">
+        <div class="filter-label">Cuisine type</div>
+        <div class="filter-chips">
+          <div class="filter-chip active" onclick="toggleChip(this)">All</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Italian</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Japanese</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Hawaiian</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Mexican</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Thai</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Indian</div>
+        </div>
+        <div class="filter-label" style="margin-top:4px">Match threshold</div>
+        <div class="range-row"><span style="font-size:13px;color:var(--muted)">Min match</span><input type="range" min="50" max="100" value="80" step="5" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">80%</span></div>
+        <div class="filter-label" style="margin-top:4px">Distance</div>
+        <div class="range-row"><span style="font-size:13px;color:var(--muted)">Max km</span><input type="range" min="1" max="20" value="5" step="1" oninput="this.nextElementSibling.textContent=this.value+'km'"><span class="range-val">5km</span></div>
+        <div class="filter-label" style="margin-top:4px">Sort by</div>
+        <div class="filter-chips">
+          <div class="filter-chip active" onclick="toggleChip(this)">Best match</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Rating</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Distance</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Price</div>
+        </div>
+        <div class="filter-label" style="margin-top:4px">Price range</div>
+        <div class="filter-chips">
+          <div class="filter-chip" onclick="toggleChip(this)">$</div>
+          <div class="filter-chip active" onclick="toggleChip(this)">$$</div>
+          <div class="filter-chip active" onclick="toggleChip(this)">$$$</div>
+          <div class="filter-chip" onclick="toggleChip(this)">$$$$</div>
+        </div>
+        <div style="height:16px"></div>
+        <button class="apply-btn" onclick="applyFilter()">Apply Filters</button>
+        <div style="height:16px"></div>
+      </div>
+    </div>
+
+    <!-- RESTAURANT DETAIL -->
+    <div class="screen" id="screen-restaurant">
+      <div class="top-bar" style="position:sticky;top:0;z-index:10">
+        <span class="back-btn" onclick="goBack()">←</span>
+        <span class="top-bar-title" id="rd-title">Restaurant</span>
+        <span style="margin-left:auto;font-size:20px;cursor:pointer" id="rd-heart" onclick="toggleHeart()">🤍</span>
+      </div>
+      <div class="scroll-body">
+        <div class="hero-block" id="rd-hero">🥗</div>
+        <div class="detail-info-block">
+          <div class="detail-name" id="rd-name">The Green Leaf</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px" id="rd-sub">Italian · Vegan Friendly</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:8px;font-size:13px">
+            <span>⭐ <strong id="rd-rating">4.8</strong></span>
+            <span style="color:var(--muted)">📍 <span id="rd-dist">1.2 km</span></span>
+            <span style="color:var(--green)">● Open</span>
+            <span style="color:var(--muted)">$$</span>
+          </div>
+          <div class="detail-tags" id="rd-tags"></div>
+          <div class="detail-actions">
+            <button class="action-btn" onclick="showToast('Sending your dietary note to restaurant...')">📋 Send My Profile</button>
+            <button class="action-btn ghost" onclick="gotoScreen('screen-reviews')">⭐ Reviews</button>
+          </div>
+        </div>
+        <div class="ai-banner">
+          <span style="font-size:18px;flex-shrink:0;margin-top:1px">✨</span>
+          <div style="font-size:12px;line-height:1.6;color:var(--brand-d)" id="rd-ai">AI analysis loading...</div>
+        </div>
+        <div class="menu-section-hd">Safe for You ✓</div>
+        <div id="rd-safe-items"></div>
+        <div class="menu-section-hd">Modifiable ⚠</div>
+        <div id="rd-warn-items"></div>
+        <div class="menu-section-hd">Not Recommended ✗</div>
+        <div id="rd-danger-items"></div>
+        <div style="height:16px"></div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="gotoScreen('screen-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="nav-item" onclick="gotoScreen('screen-scan')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7" fill="currentColor" opacity=".35"/></svg>Scan</div>
+        <div class="nav-item" onclick="gotoScreen('screen-notes')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes</div>
+        <div class="nav-item" onclick="gotoScreen('screen-profile')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+      </div>
+    </div>
+
+    <!-- REVIEWS -->
+    <div class="screen" id="screen-reviews">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title" id="rev-title">Reviews</span></div>
+      <div class="scroll-body">
+        <div style="background:#fff;padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:center">
+          <div style="text-align:center"><div style="font-size:36px;font-weight:700">4.8</div><div style="color:var(--gold);font-size:18px">★★★★★</div><div style="font-size:12px;color:var(--muted);margin-top:2px">128 reviews</div></div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:12px;min-width:12px">5</span><div style="flex:1;height:6px;background:#eee;border-radius:3px"><div style="width:78%;height:100%;background:var(--gold);border-radius:3px"></div></div></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:12px;min-width:12px">4</span><div style="flex:1;height:6px;background:#eee;border-radius:3px"><div style="width:15%;height:100%;background:var(--gold);border-radius:3px"></div></div></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:12px;min-width:12px">3</span><div style="flex:1;height:6px;background:#eee;border-radius:3px"><div style="width:5%;height:100%;background:var(--gold);border-radius:3px"></div></div></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:12px;min-width:12px">2</span><div style="flex:1;height:6px;background:#eee;border-radius:3px"><div style="width:1%;height:100%;background:var(--gold);border-radius:3px"></div></div></div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;min-width:12px">1</span><div style="flex:1;height:6px;background:#eee;border-radius:3px"><div style="width:1%;height:100%;background:var(--gold);border-radius:3px"></div></div></div>
+          </div>
+        </div>
+        <div style="padding:12px 20px 4px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill pill-green">Vegan-friendly</span><span class="pill pill-blue">Great staff</span><span class="pill pill-purple">Safe kitchen</span>
+        </div>
+        <button class="write-review-btn" onclick="gotoScreen('screen-write-review')">✏️ Write a Review</button>
+        <div class="review-card"><div class="review-header"><div class="review-avatar">MK</div><div><div class="review-name">Maria K.</div><div class="review-date">2 days ago</div></div><div class="stars" style="margin-left:auto">★★★★★</div></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px"><span class="pill pill-green" style="font-size:10px">Vegan</span><span class="pill pill-blue" style="font-size:10px">GF</span></div><div class="review-text">Finally a restaurant that truly understands dietary restrictions! The avocado pesto pasta was incredible and the staff double-checked with the kitchen. Felt so safe eating here.</div></div>
+        <div class="review-card"><div class="review-header"><div class="review-avatar" style="background:linear-gradient(135deg,#11998e,#38ef7d)">TR</div><div><div class="review-name">Tom R.</div><div class="review-date">1 week ago</div></div><div class="stars" style="margin-left:auto">★★★★☆</div></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px"><span class="pill pill-green" style="font-size:10px">Vegan</span></div><div class="review-text">Really enjoyed the warm lentil salad. Staff were knowledgeable about ingredients. Took off one star since they were out of 2 GF options that day.</div></div>
+        <div class="review-card"><div class="review-header"><div class="review-avatar" style="background:linear-gradient(135deg,#f093fb,#f5576c)">AL</div><div><div class="review-name">Amy L.</div><div class="review-date">2 weeks ago</div></div><div class="stars" style="margin-left:auto">★★★★★</div></div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px"><span class="pill pill-purple" style="font-size:10px">No Pork</span><span class="pill pill-green" style="font-size:10px">GF</span></div><div class="review-text">As someone with celiac, this place is a gem. They have a separate prep area! 100% recommend for anyone with serious dietary needs.</div></div>
+        <div style="height:16px"></div>
+      </div>
+    </div>
+
+    <!-- WRITE REVIEW -->
+    <div class="screen" id="screen-write-review">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title">Write a Review</span></div>
+      <div class="scroll-body" style="padding:16px 20px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px">Your rating</div>
+        <div style="display:flex;gap:8px;font-size:32px;margin-bottom:16px" id="star-rating">
+          <span style="cursor:pointer;opacity:.3" onclick="setStars(1)">★</span>
+          <span style="cursor:pointer;opacity:.3" onclick="setStars(2)">★</span>
+          <span style="cursor:pointer;opacity:.3" onclick="setStars(3)">★</span>
+          <span style="cursor:pointer;opacity:.3" onclick="setStars(4)">★</span>
+          <span style="cursor:pointer;opacity:.3" onclick="setStars(5)">★</span>
+        </div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Tags</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px">
+          <div class="filter-chip" onclick="toggleChip(this)">Vegan-friendly</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Safe kitchen</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Great staff</div>
+          <div class="filter-chip" onclick="toggleChip(this)">Clear labeling</div>
+          <div class="filter-chip" onclick="toggleChip(this)">GF options</div>
+        </div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Your experience</div>
+        <textarea placeholder="Share details about how well they handled your dietary needs..." style="width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-size:13px;height:120px;resize:none;outline:none;font-family:inherit;line-height:1.5"></textarea>
+        <div style="height:14px"></div>
+        <button class="apply-btn" onclick="submitReview()">Submit Review</button>
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+    <!-- SCAN -->
+    <div class="screen" id="screen-scan">
+      <div class="scroll-body" style="padding:20px">
+        <div style="font-size:20px;font-weight:700;margin-bottom:3px">Scan a Menu</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px">AI filters it for your dietary profile instantly</div>
+        <div class="viewfinder">
+          <div class="vf-corner vf-tl"></div><div class="vf-corner vf-tr"></div>
+          <div class="vf-corner vf-bl"></div><div class="vf-corner vf-br"></div>
+          <div class="scan-line"></div>
+          <div class="scan-hint">Point camera at menu</div>
+        </div>
+        <button style="background:var(--brand);color:#fff;border:none;border-radius:14px;padding:14px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px" onclick="simulateScan()">📷 Take Photo</button>
+        <button style="background:#fff;color:var(--brand);border:1.5px solid var(--brand);border-radius:14px;padding:13px;width:100%;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px">🖼️ Upload from Gallery</button>
+        <div class="scan-result" id="scan-result">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px">✨ AI Analysis Complete</div>
+          <div style="display:flex;gap:10px;margin-bottom:12px">
+            <div style="text-align:center;flex:1"><div style="font-size:22px;font-weight:700;color:var(--green)">9</div><div style="font-size:11px;color:var(--muted)">Safe dishes</div></div>
+            <div style="text-align:center;flex:1"><div style="font-size:22px;font-weight:700;color:var(--gold)">3</div><div style="font-size:11px;color:var(--muted)">Modifiable</div></div>
+            <div style="text-align:center;flex:1"><div style="font-size:22px;font-weight:700;color:var(--brand)">6</div><div style="font-size:11px;color:var(--muted)">Avoid</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">Scanned: <strong style="color:var(--text)">Bella Italia Menu</strong> · 18 items analyzed against your Vegan + GF + No Pork profile</div>
+          <button style="background:var(--brand);color:#fff;border:none;border-radius:12px;padding:10px;width:100%;font-size:14px;font-weight:700;cursor:pointer">View Full Filtered Menu</button>
+        </div>
+        <div style="margin-top:18px">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">Recent Scans</div>
+          <div style="background:#fff;border-radius:14px;padding:12px 14px;border:1px solid var(--border);display:flex;gap:11px;align-items:center;margin-bottom:8px;cursor:pointer">
+            <span style="font-size:24px">🍜</span>
+            <div><div style="font-size:13px;font-weight:700">Ramen House — Full Menu</div><div style="font-size:12px;color:var(--muted)">8 safe dishes · 2 days ago</div></div>
+            <span style="margin-left:auto;color:var(--green);font-size:12px;font-weight:600">View</span>
+          </div>
+          <div style="background:#fff;border-radius:14px;padding:12px 14px;border:1px solid var(--border);display:flex;gap:11px;align-items:center;cursor:pointer">
+            <span style="font-size:24px">🥑</span>
+            <div><div style="font-size:13px;font-weight:700">Pacific Bowl — Specials</div><div style="font-size:12px;color:var(--muted)">5 safe dishes · 5 days ago</div></div>
+            <span style="margin-left:auto;color:var(--green);font-size:12px;font-weight:600">View</span>
+          </div>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="gotoScreen('screen-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="nav-item active" onclick="gotoScreen('screen-scan')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7" fill="currentColor" opacity=".35"/></svg>Scan</div>
+        <div class="nav-item" onclick="gotoScreen('screen-notes')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes</div>
+        <div class="nav-item" onclick="gotoScreen('screen-profile')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="screen" id="screen-notes">
+      <div class="scroll-body">
+        <div style="padding:16px 20px 4px"><div style="font-size:20px;font-weight:700">Dining Notes</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Share with your server before ordering</div></div>
+        <div style="padding:12px 20px 4px;display:flex;gap:8px">
+          <span class="pill pill-green">3 saved</span><span class="pill pill-blue">Tap to copy &amp; share</span>
+        </div>
+        <div style="height:8px"></div>
+        <div class="note-card"><div class="note-tag" style="background:var(--brand-l);color:var(--brand-d)">🌿 Standard Allergy Note</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">Default note</span><span style="font-size:10px;background:#f0f0f0;color:#666;padding:2px 7px;border-radius:10px">Used 12×</span></div><div class="note-text">"I follow a vegan diet and have a gluten intolerance. Please ensure no cross-contamination, and no meat, fish, dairy, or eggs."</div><div class="note-actions"><button class="note-btn note-btn-primary" onclick="showToast('Note copied to clipboard!')">📋 Copy</button><button class="note-btn note-btn-ghost" onclick="showToast('Note shared via SMS!')">📤 Share</button><button class="note-btn note-btn-ghost">✏️ Edit</button></div></div>
+        <div class="note-card"><div class="note-tag" style="background:var(--purple-l);color:#5a3e88">🍣 Japanese Restaurants</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">Cuisine-specific</span><span style="font-size:10px;background:#f0f0f0;color:#666;padding:2px 7px;border-radius:10px">Used 4×</span></div><div class="note-text">"No pork or pork-derived broths. I can eat fish. Soy sauce is fine but no miso with dashi stock."</div><div class="note-actions"><button class="note-btn note-btn-primary" onclick="showToast('Note copied to clipboard!')">📋 Copy</button><button class="note-btn note-btn-ghost" onclick="showToast('Note shared via SMS!')">📤 Share</button><button class="note-btn note-btn-ghost">✏️ Edit</button></div></div>
+        <div class="note-card"><div class="note-tag" style="background:var(--blue-l);color:#1a4fc4">🍕 Italian Restaurants</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">Cuisine-specific</span><span style="font-size:10px;background:#f0f0f0;color:#666;padding:2px 7px;border-radius:10px">Used 7×</span></div><div class="note-text">"No cheese or dairy in any form. I need gluten-free pasta or rice base. Please check with kitchen on cross-contamination."</div><div class="note-actions"><button class="note-btn note-btn-primary" onclick="showToast('Note copied to clipboard!')">📋 Copy</button><button class="note-btn note-btn-ghost" onclick="showToast('Note shared via SMS!')">📤 Share</button><button class="note-btn note-btn-ghost">✏️ Edit</button></div></div>
+        <button class="add-note-btn">+ Create New Note</button>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="gotoScreen('screen-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="nav-item" onclick="gotoScreen('screen-scan')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7" fill="currentColor" opacity=".35"/></svg>Scan</div>
+        <div class="nav-item active" onclick="gotoScreen('screen-notes')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes</div>
+        <div class="nav-item" onclick="gotoScreen('screen-profile')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+      </div>
+    </div>
+
+    <!-- CART -->
+    <div class="screen" id="screen-cart">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title">My Order</span></div>
+      <div class="scroll-body">
+        <div style="padding:12px 20px 6px;font-size:13px;color:var(--muted)">From <strong style="color:var(--text)">The Green Leaf</strong></div>
+        <div class="cart-section">
+          <div class="cart-item"><span class="cart-emoji">🍝</span><div style="flex:1"><div class="cart-name">Avocado Pesto Pasta</div><div style="font-size:11px;color:var(--green)">✓ Safe for you</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(0,-1)">−</button><span class="qty-num" id="qty0">1</span><button class="qty-btn" onclick="changeQty(0,1)">+</button></div><span class="cart-price" id="price0">$16.50</span></div>
+          <div class="cart-item"><span class="cart-emoji">🥗</span><div style="flex:1"><div class="cart-name">Warm Lentil Salad</div><div style="font-size:11px;color:var(--green)">✓ Safe for you</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(1,-1)">−</button><span class="qty-num" id="qty1">1</span><button class="qty-btn" onclick="changeQty(1,1)">+</button></div><span class="cart-price" id="price1">$14.00</span></div>
+          <div class="order-total-row"><span>Total</span><span id="cart-total">$30.50</span></div>
+        </div>
+        <div class="cart-section" style="margin-top:4px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Dietary note to kitchen</div>
+          <div style="background:var(--brand-ll);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;color:var(--brand-d);border:1px solid rgba(232,38,42,.12)">"Vegan, gluten-free, no pork. No cross-contamination please."</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">This note is sent automatically with your order ✓</div>
+        </div>
+        <div style="padding:16px 20px 4px;font-size:14px;font-weight:700">Suggested Add-ons</div>
+        <div style="padding:0 20px;display:flex;gap:10px;overflow-x:auto;padding-bottom:10px">
+          <div style="background:#fff;border-radius:14px;padding:12px;border:1px solid var(--border);min-width:130px;flex-shrink:0;cursor:pointer" onclick="showToast('Added to order!')"><div style="font-size:24px;margin-bottom:6px">🥤</div><div style="font-size:13px;font-weight:600">Green Juice</div><div style="font-size:11px;color:var(--green);margin-top:2px">✓ Safe</div><div style="font-size:13px;font-weight:700;margin-top:4px">$6.50</div></div>
+          <div style="background:#fff;border-radius:14px;padding:12px;border:1px solid var(--border);min-width:130px;flex-shrink:0;cursor:pointer" onclick="showToast('Added to order!')"><div style="font-size:24px;margin-bottom:6px">🍮</div><div style="font-size:13px;font-weight:600">Coconut Panna Cotta</div><div style="font-size:11px;color:var(--green);margin-top:2px">✓ Safe</div><div style="font-size:13px;font-weight:700;margin-top:4px">$9.00</div></div>
+        </div>
+        <div style="height:8px"></div>
+        <button class="checkout-btn" onclick="showToast('Order placed! Kitchen has your dietary note.')">Place Order — <span id="checkout-total">$30.50</span></button>
+        <div style="height:12px"></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="screen" id="screen-notifications">
+      <div class="top-bar"><span class="back-btn" onclick="goBack()">←</span><span class="top-bar-title">Notifications</span></div>
+      <div class="scroll-body" style="padding:10px 20px">
+        <div style="background:#fff;border-radius:14px;padding:13px;border:1px solid var(--border);margin-bottom:10px;display:flex;gap:11px;cursor:pointer" onclick="openRestaurant('greenleaf');gotoScreen('screen-restaurant')">
+          <span style="font-size:28px;flex-shrink:0">🥗</span>
+          <div><div style="font-size:13px;font-weight:700">New safe dish at The Green Leaf!</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Summer truffle risotto added — matches your profile</div><div style="font-size:11px;color:var(--brand);margin-top:4px">2 hours ago</div></div>
+        </div>
+        <div style="background:#fff;border-radius:14px;padding:13px;border:1px solid var(--border);margin-bottom:10px;display:flex;gap:11px">
+          <span style="font-size:28px;flex-shrink:0">⭐</span>
+          <div><div style="font-size:13px;font-weight:700">Your review was helpful!</div><div style="font-size:12px;color:var(--muted);margin-top:2px">8 people found your review of Pacific Bowl useful</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Yesterday</div></div>
+        </div>
+        <div style="background:#fff;border-radius:14px;padding:13px;border:1px solid var(--border);margin-bottom:10px;display:flex;gap:11px">
+          <span style="font-size:28px;flex-shrink:0">🍜</span>
+          <div><div style="font-size:13px;font-weight:700">Ramen House updated their menu</div><div style="font-size:12px;color:var(--muted);margin-top:2px">3 new items added — 2 match your vegan profile</div><div style="font-size:11px;color:var(--muted);margin-top:4px">3 days ago</div></div>
+        </div>
+        <div style="background:var(--brand-ll);border-radius:14px;padding:13px;border:1px solid rgba(232,38,42,.15);margin-bottom:10px;display:flex;gap:11px">
+          <span style="font-size:28px;flex-shrink:0">🎉</span>
+          <div><div style="font-size:13px;font-weight:700">Weekly digest: 47 safe dishes nearby</div><div style="font-size:12px;color:var(--brand-d);margin-top:2px">You have 12 matching restaurants within 5 km this week</div><div style="font-size:11px;color:var(--brand);margin-top:4px">1 week ago</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="screen" id="screen-profile">
+      <div class="scroll-body">
+        <div class="profile-header">
+          <div class="profile-avatar-lg">J</div>
+          <div class="profile-name-lg">Jennifer Reyes</div>
+          <div class="profile-email">jennifer.r@email.com</div>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <div style="text-align:center;background:rgba(255,255,255,.18);border-radius:12px;padding:8px 16px"><div style="font-size:18px;font-weight:700;color:#fff">47</div><div style="font-size:11px;color:rgba(255,255,255,.72)">Safe dishes</div></div>
+            <div style="text-align:center;background:rgba(255,255,255,.18);border-radius:12px;padding:8px 16px"><div style="font-size:18px;font-weight:700;color:#fff">12</div><div style="font-size:11px;color:rgba(255,255,255,.72)">Restaurants</div></div>
+            <div style="text-align:center;background:rgba(255,255,255,.18);border-radius:12px;padding:8px 16px"><div style="font-size:18px;font-weight:700;color:#fff">7</div><div style="font-size:11px;color:rgba(255,255,255,.72)">Reviews</div></div>
+          </div>
+        </div>
+        <div class="profile-body">
+          <div class="pref-section">
+            <div class="pref-section-title">Dietary Preferences</div>
+            <div class="pref-tags" id="pref-tags">
+              <span class="pref-tag on" onclick="togglePref(this)">🌿 Vegan</span>
+              <span class="pref-tag on" onclick="togglePref(this)">🌾 Gluten-Free</span>
+              <span class="pref-tag on" onclick="togglePref(this)">🚫 No Pork</span>
+              <span class="pref-tag off" onclick="togglePref(this)">🥛 Dairy-Free</span>
+              <span class="pref-tag off" onclick="togglePref(this)">🥜 Nut-Free</span>
+              <span class="pref-tag off" onclick="togglePref(this)">☪️ Halal</span>
+              <span class="pref-tag add-tag">+ Add</span>
+            </div>
+          </div>
+          <div class="pref-section">
+            <div class="pref-section-title">Notifications</div>
+            <div class="pref-row"><span class="pref-row-lbl">New safe dishes nearby</span><div class="toggle" onclick="this.classList.toggle('off')"></div></div>
+            <div class="pref-row"><span class="pref-row-lbl">Restaurant match alerts</span><div class="toggle" onclick="this.classList.toggle('off')"></div></div>
+            <div class="pref-row"><span class="pref-row-lbl">Weekly dining digest</span><div class="toggle off" onclick="this.classList.toggle('off')"></div></div>
+            <div class="pref-row"><span class="pref-row-lbl">New reviews on saved restaurants</span><div class="toggle" onclick="this.classList.toggle('off')"></div></div>
+          </div>
+          <div class="pref-section">
+            <div class="pref-row"><span class="pref-row-lbl">Saved Restaurants</span><span class="pref-row-val">12 →</span></div>
+            <div class="pref-row"><span class="pref-row-lbl">My Reviews</span><span class="pref-row-val">7 →</span></div>
+            <div class="pref-row"><span class="pref-row-lbl">Dining History</span><span class="pref-row-val">→</span></div>
+            <div class="pref-row"><span class="pref-row-lbl">Privacy Settings</span><span class="pref-row-val">→</span></div>
+          </div>
+          <button style="width:100%;background:var(--brand-l);color:var(--brand-d);border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:20px" onclick="showToast('Signed out')">Sign Out</button>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="gotoScreen('screen-home')"><svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Home</div>
+        <div class="nav-item" onclick="gotoScreen('screen-scan')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7" fill="currentColor" opacity=".35"/></svg>Scan</div>
+        <div class="nav-item" onclick="gotoScreen('screen-notes')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes</div>
+        <div class="nav-item active" onclick="gotoScreen('screen-profile')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const RESTAURANTS = {
+  greenleaf:{name:'The Green Leaf',sub:'Italian · Vegan Friendly',hero:'🥗',rating:'4.8',dist:'1.2 km',match:98,ai:'<strong>12 of 18 dishes safe</strong> for your Vegan + GF profile. Vegan pastas and salads highlighted. 2 items can be modified on request.',tags:['🌿 Vegan-friendly','🌾 GF options','⭐ 4.8'],safe:[{e:'🍝',n:'Avocado Pesto Pasta',d:'GF pasta, basil pesto, cherry tomatoes, pine nuts',p:'$16.50',label:'Vegan · GF'},{e:'🥗',n:'Warm Lentil Salad',d:'French lentils, roasted veg, tahini dressing',p:'$14.00',label:'Vegan · GF'},{e:'🍲',n:'Minestrone Soup (V)',d:'Seasonal vegetables, tomato broth, GF breadstick on side',p:'$12.00',label:'Vegan · GF'}],warn:[{e:'🍕',n:'Margherita Flatbread',d:'Ask to swap regular crust for GF crust',p:'$13.00',label:'Request GF crust'}],danger:[{e:'🥩',n:'Beef Tagliata',d:'Contains meat and dairy',p:'$28.00',label:'Not vegan'}]},
+  ramen:{name:'Ramen House',sub:'Japanese · Pork-free options',hero:'🍜',rating:'4.6',dist:'2.5 km',match:85,ai:'<strong>8 of 22 dishes safe</strong> for your profile. Chicken &amp; veggie broths are safe. Most pork-broth dishes flagged. Ask for tamari instead of soy sauce.',tags:['🚫 Pork-free options','🌾 GF possible','⭐ 4.6'],safe:[{e:'🍜',n:'Veggie Ramen (GF broth)',d:'Mushroom dashi, bok choy, bamboo, GF noodles on request',p:'$15.00',label:'Vegan · GF req.'},{e:'🥟',n:'Edamame',d:'Steamed edamame, sea salt',p:'$6.00',label:'Vegan · GF'}],warn:[{e:'🍱',n:'Chicken Teriyaki Bento',d:'Ask to substitute GF tamari; skip the dumpling',p:'$17.00',label:'Request GF tamari'}],danger:[{e:'🐷',n:'Tonkotsu Ramen',d:'Pork bone broth — avoid',p:'$16.00',label:'Contains pork'}]},
+  pacific:{name:'Pacific Bowl',sub:'Hawaiian · Gluten-Free',hero:'🥑',rating:'4.9',dist:'800 m',match:95,ai:'<strong>16 of 20 dishes safe</strong> — nearly fully compatible with your Vegan + GF profile. Highly recommended for your dietary needs!',tags:['🥑 Plant-based','🌾 GF menu','⭐ 4.9'],safe:[{e:'🥑',n:'Avo & Mango Bowl',d:'Brown rice, avocado, mango, edamame, sesame dressing',p:'$14.00',label:'Vegan · GF'},{e:'🌺',n:'Taro & Sweet Potato Bowl',d:'Taro, roasted sweet potato, kale, coconut aminos',p:'$13.50',label:'Vegan · GF'},{e:'🥥',n:'Coconut Açaí Bowl',d:'Açaí, coconut milk, banana, granola (GF)',p:'$12.00',label:'Vegan · GF'}],warn:[],danger:[{e:'🐟',n:'Poke Tuna Bowl',d:'Contains raw fish',p:'$16.00',label:'Not vegan'}]}
+};
+
+const SEARCH_DATA = [
+  {e:'🥗',n:'The Green Leaf',d:'Italian · 98% match · 1.2 km',id:'greenleaf'},
+  {e:'🍜',n:'Ramen House',d:'Japanese · 85% match · 2.5 km',id:'ramen'},
+  {e:'🥑',n:'Pacific Bowl',d:'Hawaiian · 95% match · 800 m',id:'pacific'},
+  {e:'🌮',n:'Verde Tacos',d:'Mexican · 90% match · 1.8 km',id:null},
+  {e:'🍛',n:'Spice Garden',d:'Indian · 80% match · 3.1 km',id:null},
+];
+
+let history=[];
+let currentScreen='screen-onboard';
+let favorites={};
+let cartPrices=[16.50,14.00];
+let cartQtys=[1,1];
+let selectedDiets=new Set(['Vegan','Gluten-Free','No Pork']);
+
+function gotoScreen(id){
+  const cur=document.getElementById(currentScreen);
+  const next=document.getElementById(id);
+  if(!next||id===currentScreen)return;
+  cur.classList.remove('active');
+  cur.classList.add('prev');
+  next.classList.add('active');
+  history.push(currentScreen);
+  currentScreen=id;
+  setTimeout(()=>{cur.classList.remove('prev')},300);
+  updateNavActive(id);
+}
+function goBack(){
+  if(!history.length)return;
+  const prev=history.pop();
+  const cur=document.getElementById(currentScreen);
+  const prevEl=document.getElementById(prev);
+  cur.classList.remove('active');
+  prevEl.classList.remove('prev');
+  prevEl.classList.add('active');
+  currentScreen=prev;
+  updateNavActive(prev);
+}
+function updateNavActive(id){
+  document.querySelectorAll('.bottom-nav').forEach(nav=>{
+    nav.querySelectorAll('.nav-item').forEach(ni=>ni.classList.remove('active'));
+  });
+  const map={'screen-home':0,'screen-scan':1,'screen-notes':2,'screen-profile':3};
+  if(map[id]!==undefined){
+    document.querySelectorAll('.bottom-nav').forEach(nav=>{
+      const items=nav.querySelectorAll('.nav-item');
+      if(items[map[id]])items[map[id]].classList.add('active');
+    });
+  }
+}
+
+function skipOnboard(){history=[];gotoScreen('screen-home');renderRestaurants('foryou');}
+function obNext(n){
+  document.querySelectorAll('.ob-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('ob'+n).classList.add('active');
+  if(n===2){
+    const tags=document.getElementById('ob-tags-preview');
+    tags.innerHTML='';
+    selectedDiets.forEach(d=>{tags.innerHTML+=`<div class="diet-tag">${d}</div>`;});
+  }
+}
+function toggleDiet(el){
+  el.classList.toggle('sel');
+  const d=el.dataset.diet;
+  const chk=el.querySelector('.d-check');
+  if(el.classList.contains('sel')){selectedDiets.add(d);chk.textContent='✓';}
+  else{selectedDiets.delete(d);chk.textContent='';}
+}
+
+function renderRestaurants(tab){
+  const list=document.getElementById('rest-list');
+  const data=Object.entries(RESTAURANTS).map(([id,r])=>({id,...r}));
+  const sorted=tab==='nearby'?[...data].sort((a,b)=>parseFloat(a.dist)-parseFloat(b.dist)):tab==='popular'?[...data].sort((a,b)=>parseFloat(b.rating)-parseFloat(a.rating)):data;
+  list.innerHTML=sorted.map(r=>`
+    <div class="rest-card${favorites[r.id]?' favorited':''}" onclick="openRestaurant('${r.id}')">
+      <div class="rest-img">${r.hero}</div>
+      <div style="flex:1">
+        <div class="rest-name">${r.name}</div>
+        <div class="rest-sub">${r.sub}</div>
+        <div class="rest-meta"><span style="color:var(--gold)">★</span><span style="font-size:12px;font-weight:600">${r.rating}</span><span style="font-size:12px;color:var(--muted)">· ${r.dist}</span></div>
+        <div class="rest-badges" style="display:flex;gap:6px;margin-top:6px">
+          <span class="pill ${r.match>=90?'pill-green':'pill-gold'}">${r.match}% Match</span>
+          <span class="pill pill-gray">Custom Menu</span>
+        </div>
+      </div>
+      <span class="rest-heart" onclick="event.stopPropagation();toggleFav('${r.id}',this)">${favorites[r.id]?'❤️':'🤍'}</span>
+    </div>`).join('');
+}
+function homeTab(el,tab){
+  document.querySelectorAll('.tabs-row .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderRestaurants(tab);
+}
+function toggleFav(id,el){
+  favorites[id]=!favorites[id];
+  el.textContent=favorites[id]?'❤️':'🤍';
+  el.closest('.rest-card').classList.toggle('favorited',favorites[id]);
+  showToast(favorites[id]?'Added to favorites!':'Removed from favorites');
+}
+
+function openRestaurant(id){
+  const r=RESTAURANTS[id];
+  if(!r)return;
+  document.getElementById('rd-title').textContent=r.name;
+  document.getElementById('rd-name').textContent=r.name;
+  document.getElementById('rd-sub').textContent=r.sub;
+  document.getElementById('rd-rating').textContent=r.rating;
+  document.getElementById('rd-dist').textContent=r.dist;
+  document.getElementById('rd-hero').textContent=r.hero;
+  document.getElementById('rd-ai').innerHTML=r.ai;
+  document.getElementById('rd-heart').textContent=favorites[id]?'❤️':'🤍';
+  document.getElementById('rd-tags').innerHTML=r.tags.map(t=>`<span class="pill pill-gray" style="font-size:11px">${t}</span>`).join('');
+  document.getElementById('rev-title').textContent=r.name+' — Reviews';
+  const makeItems=(arr,cls)=>arr.map(item=>`
+    <div class="menu-item ${cls}" onclick="addToCart('${item.n}','${item.e}','${item.p}')">
+      <div class="menu-emoji">${item.e}</div>
+      <div style="flex:1">
+        <div class="menu-name">${item.n}</div>
+        <div class="menu-desc">${item.d}</div>
+        <div class="menu-price">${item.p}</div>
+        <span class="pill ${cls==='safe'?'pill-green':cls==='warn'?'pill-gold':'pill-red'}" style="font-size:10px;margin-top:5px">${cls==='safe'?'✓':'cls'==='warn'?'⚠':'✗'} ${item.label}</span>
+      </div>
+      ${cls==='safe'?`<button class="add-btn" onclick="event.stopPropagation();addToCart('${item.n}','${item.e}','${item.p}')">+ Add</button>`:''}
+    </div>`).join('');
+  document.getElementById('rd-safe-items').innerHTML=makeItems(r.safe,'safe');
+  document.getElementById('rd-warn-items').innerHTML=makeItems(r.warn,'warn');
+  document.getElementById('rd-danger-items').innerHTML=makeItems(r.danger,'danger');
+  gotoScreen('screen-restaurant');
+}
+function toggleHeart(){
+  const h=document.getElementById('rd-heart');
+  h.textContent=h.textContent==='🤍'?'❤️':'🤍';
+  showToast(h.textContent==='❤️'?'Added to favorites!':'Removed from favorites');
+}
+
+function addToCart(name,emoji,price){
+  showToast(`${emoji} ${name} added to order!`);
+}
+
+function doSearch(val){
+  const res=document.getElementById('search-results');
+  if(!val.trim()){res.innerHTML='';return;}
+  const q=val.toLowerCase();
+  const found=SEARCH_DATA.filter(r=>r.n.toLowerCase().includes(q)||r.d.toLowerCase().includes(q));
+  res.innerHTML=found.length?found.map(r=>`
+    <div style="background:#fff;border-radius:14px;padding:12px 14px;border:1px solid var(--border);display:flex;gap:11px;align-items:center;margin-bottom:8px;cursor:pointer" onclick="${r.id?`openRestaurant('${r.id}')`:'showToast(\"Coming soon!\")'}">
+      <span style="font-size:26px">${r.e}</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">${r.n}</div><div style="font-size:12px;color:var(--muted)">${r.d}</div></div>
+      <span style="font-size:20px;color:var(--muted)">›</span>
+    </div>`).join(''):'<div style="text-align:center;color:var(--muted);padding:30px 0;font-size:14px">No matches found for your profile</div>';
+}
+function setSearch(val){
+  document.getElementById('search-input').value=val;
+  doSearch(val);
+}
+
+function toggleChip(el){el.classList.toggle('active');}
+function applyFilter(){showToast('Filters applied!');goBack();}
+
+function simulateScan(){
+  showToast('Analyzing menu...');
+  setTimeout(()=>{document.getElementById('scan-result').classList.add('show');showToast('Done! 9 safe dishes found');},1400);
+}
+
+function changeQty(idx,delta){
+  cartQtys[idx]=Math.max(0,cartQtys[idx]+delta);
+  document.getElementById('qty'+idx).textContent=cartQtys[idx];
+  const p=(cartPrices[idx]*cartQtys[idx]).toFixed(2);
+  document.getElementById('price'+idx).textContent='$'+p;
+  const total=(cartPrices[0]*cartQtys[0]+cartPrices[1]*cartQtys[1]).toFixed(2);
+  document.getElementById('cart-total').textContent='$'+total;
+  document.getElementById('checkout-total').textContent='$'+total;
+}
+
+let starVal=0;
+function setStars(n){
+  starVal=n;
+  const stars=document.querySelectorAll('#star-rating span');
+  stars.forEach((s,i)=>{s.style.opacity=i<n?'1':'0.3';s.style.color=i<n?'var(--gold)':'currentColor';});
+}
+
+function submitReview(){showToast('Review submitted! Thank you.');goBack();}
+function togglePref(el){el.classList.toggle('on');el.classList.toggle('off');}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+renderRestaurants('foryou');
+</script>
+</body>
+</html>
